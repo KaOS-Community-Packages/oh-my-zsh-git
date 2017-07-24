@@ -1,5 +1,5 @@
 pkgname=oh-my-zsh-git
-pkgver=2832.0222e77
+pkgver=r4319.d848c948
 pkgrel=1
 pkgdesc="A community-driven framework for managing your zsh configuration."
 arch=('x86_64')
@@ -8,38 +8,31 @@ license=('MIT')
 depends=('zsh')
 makedepends=('git')
 optdepends=('ruby: for some plugin functionality')
-install='oh-my-zsh-git.install'
-
-_gitname=oh-my-zsh
-source=("$_gitname::git://github.com/robbyrussell/oh-my-zsh.git")
-md5sums=('SKIP')
+install=${pkgname}.install
+source=("${pkgname}::git+git://github.com/robbyrussell/oh-my-zsh.git"
+        '0001-zshrc.patch')
+sha256sums=('SKIP'
+            '9b77769319944f394a36f07b9abb296d24fe643c03b8eead74e10b7da52002b1')
+# conflicts=('grml-zsh-config'
+#            'grml-zsh-config-git')
 
 pkgver() {
-  cd "$_gitname"
-  printf "%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  cd ${pkgname}
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+  cd "${srcdir}/${pkgname}"
+  cp "templates/zshrc.zsh-template" "zshrc"
+  patch -p1 < "${srcdir}/0001-zshrc.patch"
 }
 
 package() {
-  cd $_gitname
+  cd "${srcdir}/${pkgname}"
 
   mkdir -p "${pkgdir}/usr/share/oh-my-zsh"
-
-  # Fix the path to oh-my-zsh, and disable auto-updating.
-  sed -e '2c\ZSH=/usr/share/oh-my-zsh/'\
-      -e 's/# \(DISABLE_AUTO_UPDATE="true"\)/\1/'\
-      templates/zshrc.zsh-template > zshrc
-
-  # We don't need anything related to git in the package.
-  rm -rf .git*
-
-  # We don't need {check_for_,}upgrade.sh, {un,}install.sh
-  rm -f tools/upgrade.sh
-  rm -f tools/uninstall.sh tools/install.sh
-
-  # The license should be in /usr/share/licenses.
-  install -D -m644 MIT-LICENSE.txt "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  rm MIT-LICENSE.txt
-
-  # Copy everything else.
-  cp -r . "${pkgdir}/usr/share/oh-my-zsh/"
+  install -D -m644 "LICENSE.txt" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  cp -r * "${pkgdir}/usr/share/oh-my-zsh/"
 }
+
+# vim:set ts=2 sw=2 et:
